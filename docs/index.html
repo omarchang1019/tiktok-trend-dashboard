@@ -443,10 +443,25 @@ function getItemTsSec(it){
     }
 
     function containsQuery(item, q){
-      if (!q) return true;
-      const s = JSON.stringify(item).toLowerCase();
-      return s.includes(q.toLowerCase());
-    }
+  q = (q || "").trim().toLowerCase();
+  if (!q) return true;
+
+  // only search in a few human-readable fields
+  const parts = [
+    pick(item, ["hashtag_name","challenge_name","name","title","tag"]),
+    pick(item, ["desc","video_title"]),
+    pick(item, ["author","author_name","nickname","nick_name","unique_id"]),
+    pick(item, ["song_title","music_title"]),
+    pick(item, ["country_code","country"]),
+  ];
+
+  const hay = parts
+    .filter(v => v !== undefined && v !== null)
+    .map(v => String(v).toLowerCase())
+    .join(" | ");
+
+  return hay.includes(q);
+}
 
     // ---------- endpoints ----------
     function buildPath(type, country, period, page){
@@ -709,10 +724,11 @@ if (uiPeriod === "1") {
       : "No trends detected in the last 24 hours"
   );
 } else {
-  setStatus(
-    items.length ? "ok" : "warn",
-    items.length ? `Loaded ${items.length} items.` : "No items returned."
-  );
+  const shown = (finalItems || []).filter(it => containsQuery(it, q)).length;
+setStatus(
+  shown ? "ok" : "warn",
+  shown ? `Showing ${shown} items.` : "No matches for this keyword."
+);
 }
 
 renderCards(type, finalItems, q);
