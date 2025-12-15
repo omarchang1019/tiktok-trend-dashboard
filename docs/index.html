@@ -307,16 +307,6 @@
         </div>
 
         <div class="field">
-          <div class="label">Limit</div>
-          <select id="limit">
-            <option value="10">10</option>
-            <option value="20" selected>20</option>
-            <option value="30">30</option>
-            <option value="50">50</option>
-          </select>
-        </div>
-
-        <div class="field">
           <button class="btn" id="btnLoad">Load</button>
         </div>
       </div>
@@ -328,6 +318,24 @@
     </div>
 
     <div id="content"></div>
+    
+    <!-- ✅ Paste Step 6 pagination panel HERE -->
+<div class="panel" style="margin-top:14px;">
+  <div style="display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+    <div class="pill">
+      <span class="dot ok"></span>
+      <span id="pageInfo">Page 1 · 20 items per page</span>
+    </div>
+
+    <div style="display:flex; gap:10px;">
+      <button class="btn" id="btnPrev">Prev</button>
+      <button class="btn" id="btnNext">Next</button>
+    </div>
+  </div>
+</div>
+
+</div> <!-- wrap ends -->
+    
   </div>
 
   <script>
@@ -436,14 +444,17 @@ function getItemTsSec(it){
     }
 
     // ---------- endpoints ----------
-    function buildPath(type, country, period, limit){
+    function buildPath(type, country, period, page){
   // ✅ SAFETY: API only supports 7/30/120
   const apiPeriod = (period === "1") ? "7" : period;
 
+  // fixed page size
+  const limit = PAGE_SIZE;
+
   if (type === "creators"){
-    return `/api/creators?country=${encodeURIComponent(country)}&limit=${encodeURIComponent(limit)}&page=1`;
+    return `/api/creators?country=${encodeURIComponent(country)}&limit=${limit}&page=${encodeURIComponent(page)}`;
   }
-  return `/api/${type}?country=${encodeURIComponent(country)}&period=${encodeURIComponent(apiPeriod)}&limit=${encodeURIComponent(limit)}&page=1`;
+  return `/api/${type}?country=${encodeURIComponent(country)}&period=${encodeURIComponent(apiPeriod)}&limit=${limit}&page=${encodeURIComponent(page)}`;
 }
 
     // ---------- render ----------
@@ -612,21 +623,29 @@ if (link && link.startsWith("/")) {
       const country = $("country").value;
       const type = $("type").value;
       const period = $("period").value;
-      const limit = $("limit").value;
       const q = $("q").value.trim();
 
+   // save last query state for pagination buttons
+     LAST_COUNTRY = country;
+     LAST_TYPE = type;
+     LAST_PERIOD = period;
+     LAST_Q = q;
+      
       if (!base.startsWith("http")){
         setStatus("bad", "Please set a valid API Base URL (Vercel URL).");
         return;
       }
 
-      const path = buildPath(type, country, period, limit);
+      const path = buildPath(type, country, period, CURRENT_PAGE);
       const url = base + path;
 
       setStatus("warn", "Loading…");
       try{
         const resp = await fetch(url, { method: "GET" });
         const json = await resp.json().catch(() => null);
+        
+        // has_more lives in different places depending on endpoint
+        LAST_HAS_MORE = !!(json?.data?.pagination?.has_more ?? json?.data?.pagination?.hasMore ?? json?.pagination?.has_more);
 
         // debug (open console if needed)
         console.log("API URL:", url);
@@ -681,22 +700,68 @@ renderCards(type, finalItems, q);
         renderCards(type, [], q);
       }
     }
+    
+let CURRENT_PAGE = 1;
+const PAGE_SIZE = 20;
+let LAST_HAS_MORE = false;
+let LAST_TYPE = "hashtags";
+let LAST_COUNTRY = "US";
+let LAST_PERIOD = "7";
+let LAST_Q = "";
 
     // ---------- init ----------
+
+function updatePager(){
+  const prev = $("btnPrev");
+  const next = $("btnNext");
+  if (!prev || !next) return;
+
+  prev.disabled = CURRENT_PAGE <= 1;
+  next.disabled = !LAST_HAS_MORE;
+
+  prev.style.opacity = prev.disabled ? 0.45 : 1;
+  next.style.opacity = next.disabled ? 0.45 : 1;
+
+  $("pageInfo").textContent = `Page ${CURRENT_PAGE} · ${PAGE_SIZE} items per page`;
+}
+
+$("btnPrev")?.addEventListener("click", () => {
+  if (CURRENT_PAGE > 1) {
+    CURRENT_PAGE -= 1;
+    load();
+  }
+});
+
+$("btnNext")?.addEventListener("click", () => {
+  if (LAST_HAS_MORE) {
+    CURRENT_PAGE += 1;
+    load();
+  }
+});
     $("btnLoad").addEventListener("click", load);
-    $("type").addEventListener("change", load);
-    $("country").addEventListener("change", load);
-    $("period").addEventListener("change", () => {
-      // creators doesn't use period; still ok to reload
-      load();
-    });
-    $("limit").addEventListener("change", load);
-    $("q").addEventListener("input", () => {
-      // live filter without refetch
-      // we re-render from last fetched items by reloading quickly is simpler here
-      // but to keep it super simple for you, just load again (API is fast enough)
-      load();
-    });
+    $("type").addEventListener("change", () => {
+  CURRENT_PAGE = 1;
+  load();
+});
+
+$("country").addEventListener("change", () => {
+  CURRENT_PAGE = 1;
+  load();
+});
+
+$("period").addEventListener("change", () => {
+  // creators doesn't use period; still ok to reload
+  CURRENT_PAGE = 1;
+  load();
+});
+
+// ✅ limit 已经不用了（固定每页 20 + 分页）
+// $("limit").addEventListener("change", load);
+
+$("q").addEventListener("input", () => {
+  CURRENT_PAGE = 1;
+  load();
+});
 
     // auto-load on open
     load();
