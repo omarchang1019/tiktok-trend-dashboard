@@ -2,192 +2,598 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>TikTok Trends Radar</title>
+  <meta name="color-scheme" content="dark" />
+  <!-- avoid favicon 404 -->
+  <link rel="icon" href="data:," />
+
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:0;background:#0b0b0f;color:#fff}
-    header{position:sticky;top:0;background:#0b0b0f;padding:14px 14px 10px;border-bottom:1px solid #222}
-    h1{font-size:18px;margin:0 0 8px}
-    .row{display:flex;gap:10px;flex-wrap:wrap}
-    input,select,button{padding:10px 12px;border-radius:10px;border:1px solid #2a2a33;background:#111119;color:#fff}
-    button{cursor:pointer}
-    main{padding:14px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
-    .card{background:#111119;border:1px solid #23232c;border-radius:16px;padding:12px}
-    .muted{color:#a8a8b3;font-size:12px}
-    .tag{display:inline-block;font-size:12px;padding:4px 8px;border:1px solid #2a2a33;border-radius:999px;margin-right:6px;margin-top:6px;color:#d8d8e3}
-    a{color:#8ab4ff;text-decoration:none}
-    .err{color:#ff7b7b}
-    .pill{display:inline-flex;gap:8px;align-items:center}
+    :root{
+      --bg:#0b0f17;
+      --panel: rgba(255,255,255,.06);
+      --panel2: rgba(255,255,255,.09);
+      --border: rgba(255,255,255,.12);
+      --text:#e9eefc;
+      --muted: rgba(233,238,252,.72);
+      --muted2: rgba(233,238,252,.55);
+      --ok:#43ffb4;
+      --warn:#ffcc66;
+      --bad:#ff5c7a;
+      --shadow: 0 18px 55px rgba(0,0,0,.55);
+      --radius: 18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:
+        radial-gradient(1200px 800px at 10% 10%, rgba(81,118,255,.25), transparent 55%),
+        radial-gradient(900px 600px at 90% 30%, rgba(67,255,180,.18), transparent 55%),
+        radial-gradient(900px 700px at 50% 90%, rgba(255,92,122,.12), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      min-height:100vh;
+    }
+    .wrap{
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 22px 16px 34px;
+    }
+    .header{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin: 6px 0 16px;
+    }
+    .logo{
+      width:44px;height:44px;
+      display:grid;place-items:center;
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.05));
+      border:1px solid var(--border);
+      box-shadow: var(--shadow);
+      font-size: 22px;
+    }
+    h1{
+      margin:0;
+      font-size: clamp(22px, 4vw, 34px);
+      letter-spacing: .2px;
+      line-height:1.1;
+    }
+    .sub{
+      margin:4px 0 0;
+      font-size: 13px;
+      color: var(--muted2);
+    }
+
+    .panel{
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.045));
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .controls{
+      display:grid;
+      grid-template-columns: 160px 220px 1fr;
+      gap:10px;
+      margin-top: 12px;
+    }
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .label{
+      font-size:12px;
+      color:var(--muted2);
+      letter-spacing:.2px;
+    }
+    select, input{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,.25);
+      color: var(--text);
+      outline: none;
+    }
+    input::placeholder{color: rgba(233,238,252,.35)}
+    .row2{
+      display:grid;
+      grid-template-columns: 1fr 140px 140px 140px;
+      gap:10px;
+      margin-top: 10px;
+      align-items:end;
+    }
+    .btn{
+      padding: 12px 14px;
+      border-radius: 14px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      cursor:pointer;
+      font-weight: 600;
+    }
+    .btn:hover{background: rgba(255,255,255,.12)}
+    .btn:active{transform: translateY(1px)}
+    .status{
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .pill{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.22);
+      color: var(--muted);
+    }
+    .dot{width:8px;height:8px;border-radius:999px;background:var(--muted2)}
+    .dot.ok{background: var(--ok)}
+    .dot.bad{background: var(--bad)}
+    .dot.warn{background: var(--warn)}
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .card{
+      border-radius: 18px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.24);
+      padding: 14px;
+      overflow:hidden;
+      min-height: 134px;
+      position:relative;
+    }
+    .card:hover{background: rgba(0,0,0,.29)}
+    .topline{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+      margin-bottom: 10px;
+    }
+    .title{
+      font-weight: 800;
+      letter-spacing:.2px;
+      font-size: 15px;
+      line-height:1.25;
+      margin:0;
+      word-break: break-word;
+    }
+    .rank{
+      font-size: 12px;
+      color: var(--muted2);
+      white-space:nowrap;
+      padding: 6px 8px;
+      border-radius: 999px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.06);
+    }
+    .meta{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .tag{
+      padding: 6px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      color: var(--muted);
+      max-width: 100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .link{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      margin-top: 10px;
+      color: var(--text);
+      text-decoration:none;
+      font-weight: 700;
+      font-size: 13px;
+      opacity:.92;
+    }
+    .link:hover{opacity:1}
+    .muted{color: var(--muted2)}
+    .empty{
+      padding: 22px 14px;
+      border-radius: 18px;
+      border:1px dashed rgba(255,255,255,.18);
+      color: var(--muted);
+      margin-top: 14px;
+    }
+    .small{
+      font-size: 12px;
+      color: var(--muted2);
+    }
+
+    @media (max-width: 980px){
+      .grid{grid-template-columns: repeat(2, minmax(0,1fr))}
+      .controls{grid-template-columns: 1fr 1fr}
+      .row2{grid-template-columns: 1fr 1fr}
+      .row2 .field:last-child{grid-column: 1 / -1;}
+    }
+    @media (max-width: 560px){
+      .grid{grid-template-columns: 1fr}
+      .controls{grid-template-columns: 1fr}
+      .row2{grid-template-columns: 1fr 1fr}
+      .row2 .field:nth-child(1){grid-column: 1/-1;}
+    }
   </style>
 </head>
+
 <body>
-<header>
-  <h1>📈 TikTok Trends Radar</h1>
-  <div class="row">
-    <span class="pill">
-      <span class="muted">Country</span>
-      <select id="country">
-        <option value="US" selected>US</option>
-        <option value="GB">GB</option>
-        <option value="JP">JP</option>
-        <option value="KR">KR</option>
-        <option value="ID">ID</option>
-        <option value="VN">VN</option>
-        <option value="TH">TH</option>
-        <option value="TR">TR</option>
-        <option value="BR">BR</option>
-      </select>
-    </span>
+  <div class="wrap">
+    <div class="header">
+      <div class="logo">📈</div>
+      <div>
+        <h1>TikTok Trends Radar</h1>
+        <div class="sub">Real-time trending signals via TikTok Creative Center (unofficial). Mobile-friendly, English UI.</div>
+      </div>
+    </div>
 
-    <span class="pill">
-      <span class="muted">Type</span>
-      <select id="type">
-        <option value="hashtags">Trending Hashtags</option>
-        <option value="songs">Trending Sounds</option>
-        <option value="creators">Trending Creators</option>
-        <option value="videos">Trending Videos</option>
-        <option value="ads">Top Ads</option>
-      </select>
-    </span>
-
-    <input id="q" placeholder="Search keyword (title/author/#tag)" />
-    <button id="reload">Refresh</button>
-    <span class="muted" id="status"></span>
-  </div>
-  <div class="row" style="margin-top:8px;">
-    <span class="muted">API Base:</span>
-    <input id="apiBase" style="flex:1;min-width:260px" placeholder="https://YOUR-VERCEL-DOMAIN.vercel.app" />
-    <button id="save">Save</button>
-  </div>
-</header>
-
-<main>
-  <div id="msg" class="muted"></div>
-  <div class="grid" id="grid"></div>
-</main>
-
-<script>
-  // 1) Set your deployed API base here (or paste into the input and Save)
-  let API_BASE = localStorage.getItem("API_BASE") || "https://tiktok-creative-center-api-orcin.vercel.app";
-
-  // 2) IMPORTANT: endpoints differ by project.
-  // Open the author's demo "Try Endpoint", copy the request path, then map it here.
-  // Example mapping (PLACEHOLDER): /api/trending/hashtags?country=US
-  const ENDPOINTS = {
-  hashtags: (c) => `/api/hashtags?country=${encodeURIComponent(c)}&period=7&limit=20&page=1`,
-  songs:    (c) => `/api/songs?country=${encodeURIComponent(c)}&period=7&limit=20&page=1`,
-  videos:   (c) => `/api/videos?country=${encodeURIComponent(c)}&period=7&limit=20&page=1`,
-  creators: (c) => `/api/creators?country=${encodeURIComponent(c)}&limit=20&page=1`
-};
-
-  const elCountry = document.getElementById("country");
-  const elType = document.getElementById("type");
-  const elQ = document.getElementById("q");
-  const elGrid = document.getElementById("grid");
-  const elMsg = document.getElementById("msg");
-  const elStatus = document.getElementById("status");
-  const elApiBase = document.getElementById("apiBase");
-
-  elApiBase.value = API_BASE;
-
-  function pickArray(data){
-    if (Array.isArray(data)) return data;
-    for (const k of ["data","items","list","itemList","result"]) {
-      if (Array.isArray(data?.[k])) return data[k];
-    }
-    return [];
-  }
-
-  function textOf(x){
-    return (x ?? "").toString();
-  }
-
-  function render(items){
-    const q = elQ.value.trim().toLowerCase();
-    let filtered = items;
-    if (q) {
-      filtered = items.filter(it => JSON.stringify(it).toLowerCase().includes(q));
-    }
-
-    elGrid.innerHTML = "";
-    if (filtered.length === 0){
-      elMsg.textContent = "No results. Try another country/type/keyword.";
-      return;
-    }
-    elMsg.textContent = "";
-
-    filtered.slice(0, 60).forEach(it => {
-      const title = it.title || it.name || it.hashtag_name || it.music_name || it.author || "Untitled";
-      const author = it.author || it.creator || it.username || it.owner || "";
-      const rank = it.rank ?? it.position ?? "";
-      const link = it.link || it.url || it.music_url || it.hashtag_url || "";
-
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <div style="font-size:14px;line-height:1.35;margin-bottom:8px;">
-          ${link ? `<a href="${textOf(link)}" target="_blank" rel="noreferrer">${textOf(title)}</a>` : textOf(title)}
+    <div class="panel">
+      <div class="controls">
+        <div class="field">
+          <div class="label">Country</div>
+          <select id="country">
+            <option value="US">US</option>
+            <option value="JP">JP</option>
+            <option value="KR">KR</option>
+            <option value="GB">GB</option>
+            <option value="DE">DE</option>
+            <option value="FR">FR</option>
+            <option value="TR">TR</option>
+            <option value="ID">ID</option>
+            <option value="VN">VN</option>
+            <option value="TH">TH</option>
+            <option value="PH">PH</option>
+            <option value="BR">BR</option>
+            <option value="MX">MX</option>
+          </select>
         </div>
-        <div class="muted">${author ? `By: ${textOf(author)}` : ""}</div>
-        <div style="margin-top:10px;">
-          ${rank !== "" ? `<span class="tag"># ${textOf(rank)}</span>` : ""}
-          ${it.country_code ? `<span class="tag">${textOf(it.country_code)}</span>` : ""}
-          ${it.rank_diff_type != null ? `<span class="tag">Δ type: ${textOf(it.rank_diff_type)}</span>` : ""}
+
+        <div class="field">
+          <div class="label">Type</div>
+          <select id="type">
+            <option value="hashtags">Trending Hashtags</option>
+            <option value="songs">Trending Sounds</option>
+            <option value="videos">Trending Videos</option>
+            <option value="creators">Trending Creators</option>
+          </select>
         </div>
-      `;
-      elGrid.appendChild(card);
+
+        <div class="field">
+          <div class="label">Search keyword</div>
+          <input id="q" type="search" placeholder="Search by name / title / author..." />
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <div class="label">API Base</div>
+          <input id="apiBase" type="url" spellcheck="false" value="https://tiktok-creative-center-api-orcin.vercel.app" />
+          <div class="small">Example: https://your-vercel-domain.vercel.app</div>
+        </div>
+
+        <div class="field">
+          <div class="label">Period</div>
+          <select id="period">
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="120">Last 120 days</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <div class="label">Limit</div>
+          <select id="limit">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="30">30</option>
+            <option value="50">50</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <button class="btn" id="btnLoad">Load</button>
+        </div>
+      </div>
+
+      <div class="status">
+        <div class="pill"><span class="dot" id="dot"></span><span id="statusText">Ready.</span></div>
+        <div class="pill"><span class="muted">Tip:</span> <span class="muted">If you see no results, try another country or remove search keyword.</span></div>
+      </div>
+    </div>
+
+    <div id="content"></div>
+  </div>
+
+  <script>
+    // ---------- helpers ----------
+    const $ = (id) => document.getElementById(id);
+
+    function setStatus(kind, text){
+      const dot = $("dot");
+      dot.className = "dot" + (kind ? " " + kind : "");
+      $("statusText").textContent = text;
+    }
+
+    function cleanBaseUrl(s){
+      return (s || "").trim().replace(/\/+$/,"");
+    }
+
+    function normalizeItems(json){
+      if (!json) return [];
+      if (Array.isArray(json)) return json;
+      if (Array.isArray(json.data)) return json.data;
+      if (json.data && Array.isArray(json.data.list)) return json.data.list;
+      if (json.data && Array.isArray(json.data.items)) return json.data.items;
+      if (Array.isArray(json.list)) return json.list;
+      if (Array.isArray(json.items)) return json.items;
+      return [];
+    }
+
+    function toText(v){
+      if (v === null || v === undefined) return "";
+      return String(v);
+    }
+
+    function pick(obj, keys){
+      for (const k of keys){
+        const v = obj?.[k];
+        if (v !== undefined && v !== null && v !== "") return v;
+      }
+      return undefined;
+    }
+
+    function formatNumber(n){
+      const x = Number(n);
+      if (!Number.isFinite(x)) return "";
+      return x.toLocaleString();
+    }
+
+    function containsQuery(item, q){
+      if (!q) return true;
+      const s = JSON.stringify(item).toLowerCase();
+      return s.includes(q.toLowerCase());
+    }
+
+    // ---------- endpoints ----------
+    function buildPath(type, country, period, limit){
+      // creators endpoint does not need period in your API
+      if (type === "creators"){
+        return `/api/creators?country=${encodeURIComponent(country)}&limit=${encodeURIComponent(limit)}&page=1`;
+      }
+      return `/api/${type}?country=${encodeURIComponent(country)}&period=${encodeURIComponent(period)}&limit=${encodeURIComponent(limit)}&page=1`;
+    }
+
+    // ---------- render ----------
+    function renderCards(type, items, q){
+      const root = $("content");
+      root.innerHTML = "";
+
+      const filtered = (items || []).filter(it => containsQuery(it, q));
+      if (!filtered.length){
+        const div = document.createElement("div");
+        div.className = "empty";
+        div.textContent = "No results. Try another country/type/keyword.";
+        root.appendChild(div);
+        return;
+      }
+
+      const grid = document.createElement("div");
+      grid.className = "grid";
+
+      for (const it of filtered){
+        const card = document.createElement("div");
+        card.className = "card";
+
+        // generic fields (best-effort across types)
+        const rank = pick(it, ["rank", "rank_no", "ranking", "position"]);
+        const title =
+          type === "hashtags"
+            ? ("#" + toText(pick(it, ["hashtag_name", "challenge_name", "name", "title", "tag"])).replace(/^#/,""))
+            : type === "songs"
+              ? toText(pick(it, ["song_title", "music_title", "title", "name"]))
+              : type === "creators"
+                ? toText(pick(it, ["nick_name", "nickname", "creator_name", "name", "unique_id"]))
+                : toText(pick(it, ["title", "desc", "video_title", "name"])) || "Untitled";
+
+        const author =
+          type === "videos"
+            ? toText(pick(it, ["author", "author_name", "nickname", "nick_name"]))
+            : type === "songs"
+              ? toText(pick(it, ["author", "artist", "singer"]))
+              : "";
+
+        const link =
+          toText(pick(it, ["link", "url", "share_url", "music_url"])) || "";
+
+        // numeric meta
+        const views = pick(it, ["vv", "view_cnt", "views", "play_cnt", "video_view_cnt"]);
+        const likes = pick(it, ["like_cnt", "likes"]);
+        const followers = pick(it, ["follower_cnt", "followers"]);
+        const posts = pick(it, ["video_cnt", "posts", "post_cnt"]);
+        const region = pick(it, ["country_code", "country", "creator_country"]);
+
+        // cover
+        const cover = toText(pick(it, ["cover", "cover_uri", "cover_url", "avatar_url", "avatar", "thumb", "thumbnail"])) || "";
+
+        // top line
+        const top = document.createElement("div");
+        top.className = "topline";
+
+        const h = document.createElement("div");
+        const t = document.createElement("p");
+        t.className = "title";
+        t.textContent = title || "(no title)";
+        h.appendChild(t);
+
+        if (author){
+          const au = document.createElement("div");
+          au.className = "small";
+          au.textContent = author;
+          h.appendChild(au);
+        }
+
+        top.appendChild(h);
+
+        const r = document.createElement("div");
+        r.className = "rank";
+        r.textContent = (rank !== undefined) ? `Rank #${rank}` : "Rank";
+        top.appendChild(r);
+
+        card.appendChild(top);
+
+        // tags/meta
+        const meta = document.createElement("div");
+        meta.className = "meta";
+
+        if (region) meta.appendChild(tagEl(`Region: ${region}`));
+
+        if (type === "creators"){
+          if (followers !== undefined) meta.appendChild(tagEl(`Followers: ${formatNumber(followers)}`));
+          if (posts !== undefined) meta.appendChild(tagEl(`Videos: ${formatNumber(posts)}`));
+        } else {
+          if (views !== undefined) meta.appendChild(tagEl(`Views: ${formatNumber(views)}`));
+          if (likes !== undefined) meta.appendChild(tagEl(`Likes: ${formatNumber(likes)}`));
+        }
+
+        // extra: period hint
+        if (type !== "creators"){
+          meta.appendChild(tagEl(`Period: ${$("period").value}d`));
+        }
+
+        card.appendChild(meta);
+
+        // cover preview (optional)
+        if (cover && /^https?:\/\//i.test(cover)){
+          const img = document.createElement("img");
+          img.src = cover;
+          img.alt = "";
+          img.loading = "lazy";
+          img.referrerPolicy = "no-referrer";
+          img.style.width = "100%";
+          img.style.height = "140px";
+          img.style.objectFit = "cover";
+          img.style.borderRadius = "14px";
+          img.style.marginTop = "10px";
+          img.style.border = "1px solid rgba(255,255,255,.10)";
+          card.appendChild(img);
+        }
+
+        if (link && /^https?:\/\//i.test(link)){
+          const a = document.createElement("a");
+          a.className = "link";
+          a.href = link;
+          a.target = "_blank";
+          a.rel = "noreferrer noopener";
+          a.textContent = "Open on TikTok ↗";
+          card.appendChild(a);
+        } else {
+          const m = document.createElement("div");
+          m.className = "small muted";
+          m.style.marginTop = "10px";
+          m.textContent = "No direct link available.";
+          card.appendChild(m);
+        }
+
+        grid.appendChild(card);
+      }
+
+      root.appendChild(grid);
+
+      function tagEl(text){
+        const s = document.createElement("span");
+        s.className = "tag";
+        s.textContent = text;
+        return s;
+      }
+    }
+
+    // ---------- load ----------
+    async function load(){
+      const base = cleanBaseUrl($("apiBase").value);
+      const country = $("country").value;
+      const type = $("type").value;
+      const period = $("period").value;
+      const limit = $("limit").value;
+      const q = $("q").value.trim();
+
+      if (!base.startsWith("http")){
+        setStatus("bad", "Please set a valid API Base URL (Vercel URL).");
+        return;
+      }
+
+      const path = buildPath(type, country, period, limit);
+      const url = base + path;
+
+      setStatus("warn", "Loading…");
+      try{
+        const resp = await fetch(url, { method: "GET" });
+        const json = await resp.json().catch(() => null);
+
+        // debug (open console if needed)
+        console.log("API URL:", url);
+        console.log("API raw response:", json);
+
+        if (!resp.ok){
+          setStatus("bad", `HTTP ${resp.status} – ${toText(json?.error || json?.message || "Request failed")}`);
+          renderCards(type, [], q);
+          return;
+        }
+
+        const items = normalizeItems(json);
+        console.log("Normalized items length:", items.length);
+
+        setStatus(items.length ? "ok" : "warn", items.length ? `Loaded ${items.length} items.` : "No items returned.");
+        renderCards(type, items, q);
+
+      }catch(e){
+        setStatus("bad", `Failed: ${String(e?.message || e)}`);
+        renderCards(type, [], q);
+      }
+    }
+
+    // ---------- init ----------
+    $("btnLoad").addEventListener("click", load);
+    $("type").addEventListener("change", load);
+    $("country").addEventListener("change", load);
+    $("period").addEventListener("change", () => {
+      // creators doesn't use period; still ok to reload
+      load();
     });
-  }
+    $("limit").addEventListener("change", load);
+    $("q").addEventListener("input", () => {
+      // live filter without refetch
+      // we re-render from last fetched items by reloading quickly is simpler here
+      // but to keep it super simple for you, just load again (API is fast enough)
+      load();
+    });
 
-  async function load(){
-    elStatus.textContent = "Loading…";
-    elMsg.textContent = "";
-    elGrid.innerHTML = "";
-
-    const c = elCountry.value;
-    const t = elType.value;
-
-    if (!API_BASE || !API_BASE.startsWith("https://")) {
-  elStatus.textContent = "";
-  elMsg.innerHTML =
-    `<span class="err">Please set your API Base (Vercel URL) first.</span>`;
-  return;
-    }
-
-    const pathBuilder = ENDPOINTS[t];
-    if (!pathBuilder){
-      elStatus.textContent = "";
-      elMsg.innerHTML = `<span class="err">Unknown type mapping. Please update ENDPOINTS in the code.</span>`;
-      return;
-    }
-
-    const url = API_BASE.replace(/\/$/,"") + pathBuilder(c);
-
-    try{
-      const res = await fetch(url, { cache: "no-store" });
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const items = pickArray(data);
-      elStatus.textContent = `Loaded ${items.length} items`;
-      render(items);
-    }catch(e){
-      elStatus.textContent = "";
-      elMsg.innerHTML = `<span class="err">Failed: ${e.message}</span><br/>Tip: check API Base URL, endpoint path, or country availability.`;
-    }
-  }
-
-  document.getElementById("reload").addEventListener("click", load);
-  elCountry.addEventListener("change", load);
-  elType.addEventListener("change", load);
-
-  document.getElementById("save").addEventListener("click", () => {
-    API_BASE = elApiBase.value.trim();
-    localStorage.setItem("API_BASE", API_BASE);
+    // auto-load on open
     load();
-  });
-
-  load();
-</script>
+  </script>
 </body>
 </html>
