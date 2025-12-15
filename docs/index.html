@@ -355,7 +355,14 @@
   // 2) common key names (based on your real responses)
   if (d && Array.isArray(d.list)) return d.list;        // hashtags
   if (d && Array.isArray(d.videos)) return d.videos;    // videos
-  if (d && Array.isArray(d.songs)) return d.songs;      // likely
+  if (d && Array.isArray(d.songs)) return d.songs;
+  if (d && Array.isArray(d.sounds)) return d.sounds;
+  if (d && Array.isArray(d.music)) return d.music;
+  if (d && Array.isArray(d.musics)) return d.musics;
+  if (d && Array.isArray(d.sound_list)) return d.sound_list;
+  if (d && Array.isArray(d.music_list)) return d.music_list;
+  if (d && Array.isArray(d.songs_list)) return d.songs_list;
+  if (d && Array.isArray(d.rank_list)) return d.rank_list;
   if (d && Array.isArray(d.creators)) return d.creators;// likely
 
   // 3) other common shapes
@@ -443,8 +450,24 @@
               ? toText(pick(it, ["author", "artist", "singer"]))
               : "";
 
-        const link =
-          toText(pick(it, ["link", "url", "share_url", "music_url"])) || "";
+        let link = toText(pick(it, [
+  "link",
+  "url",
+  "share_url",
+  "music_url",
+  "author_url",
+  "creator_url",
+  "profile_url",
+  "tiktok_url",
+  "item_url",
+  "jump_url",
+  "redirect_url"
+])) || "";
+
+// if API returns relative paths like "/music/..." or "/@user"
+if (link && link.startsWith("/")) {
+  link = "https://www.tiktok.com" + link;
+}
 
         // numeric meta
         const views = pick(it, ["vv", "view_cnt", "views", "play_cnt", "video_view_cnt"]);
