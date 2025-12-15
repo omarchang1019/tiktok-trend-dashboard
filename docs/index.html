@@ -483,6 +483,16 @@ function getItemTsSec(it){
       root.innerHTML = "";
 
       const filtered = (items || []).filter(it => containsQuery(it, q));
+
+      console.log(
+  "Sample items:",
+  (items || []).slice(0, 5).map(it => ({
+    hashtag_name: it.hashtag_name,
+    name: it.name,
+    title: it.title
+  }))
+);
+      
       if (!filtered.length){
         const div = document.createElement("div");
         div.className = "empty";
