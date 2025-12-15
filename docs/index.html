@@ -342,8 +342,6 @@
 </div>
 
 </div> <!-- wrap ends -->
-    
-  </div>
 
   <script>
     // ---------- helpers ----------
@@ -626,26 +624,28 @@ if (link && link.startsWith("/")) {
 
     // ---------- load ----------
     async function load(){
-      console.log("API URL:", url);
-      const base = cleanBaseUrl($("apiBase").value);
-      const country = $("country").value;
-      const type = $("type").value;
-      const period = $("period").value;
-      const q = $("q").value.trim();
+  const base = cleanBaseUrl($("apiBase").value);
+  const country = $("country").value;
+  const type = $("type").value;
+  const period = $("period").value;
+  const q = $("q").value.trim();
 
-   // save last query state for pagination buttons
-     LAST_COUNTRY = country;
-     LAST_TYPE = type;
-     LAST_PERIOD = period;
-     LAST_Q = q;
-      
-      if (!base.startsWith("http")){
-        setStatus("bad", "Please set a valid API Base URL (Vercel URL).");
-        return;
-      }
+  // save last query state for pagination buttons
+  LAST_COUNTRY = country;
+  LAST_TYPE = type;
+  LAST_PERIOD = period;
+  LAST_Q = q;
 
-      const path = buildPath(type, country, period, CURRENT_PAGE);
-      const url = base + path;
+  if (!base.startsWith("http")){
+    setStatus("bad", "Please set a valid API Base URL (Vercel URL).");
+    return;
+  }
+
+  const path = buildPath(type, country, period, CURRENT_PAGE);
+  const url = base + path;
+
+  console.log("LOAD page =", CURRENT_PAGE);
+  console.log("API URL:", url);
 
       setStatus("warn", "Loading…");
       try{
@@ -674,10 +674,11 @@ if (link && link.startsWith("/")) {
         console.log("API raw response:", json);
 
         if (!resp.ok){
-          setStatus("bad", `HTTP ${resp.status} – ${toText(json?.error || json?.message || "Request failed")}`);
-          renderCards(type, [], q);
-          return;
-        }
+  setStatus("bad", `HTTP ${resp.status} – ${toText(json?.error || json?.message || "Request failed")}`);
+  renderCards(type, [], q);
+  updatePager();
+  return;
+}
 
         const items = normalizeItems(json);
 console.log("Normalized items length:", items.length);
@@ -715,11 +716,12 @@ if (uiPeriod === "1") {
 }
 
 renderCards(type, finalItems, q);
-
+updatePager();
 
       }catch(e){
         setStatus("bad", `Failed: ${String(e?.message || e)}`);
         renderCards(type, [], q);
+        updatePager();
       }
     }
     
@@ -730,6 +732,8 @@ let LAST_TYPE = "hashtags";
 let LAST_COUNTRY = "US";
 let LAST_PERIOD = "7";
 let LAST_Q = "";
+let LAST_TOTAL_COUNT = null;
+let LAST_TOTAL_PAGES = null;
 
     // ---------- init ----------
 
@@ -804,7 +808,6 @@ $("btnNext")?.addEventListener("click", () => {
     $("type").addEventListener("change", resetAndLoad);
     $("country").addEventListener("change", resetAndLoad);
     $("period").addEventListener("change", resetAndLoad);
-    $("limit").addEventListener("change", resetAndLoad);
     
     // 搜索框建议 debounce，但先简单点
     $("q").addEventListener("input", resetAndLoad);
