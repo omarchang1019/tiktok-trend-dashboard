@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TikTok Trends Radar</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:0;background:#0b0b0f;color:#fff}
+    header{position:sticky;top:0;background:#0b0b0f;padding:14px 14px 10px;border-bottom:1px solid #222}
+    h1{font-size:18px;margin:0 0 8px}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    input,select,button{padding:10px 12px;border-radius:10px;border:1px solid #2a2a33;background:#111119;color:#fff}
+    button{cursor:pointer}
+    main{padding:14px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+    .card{background:#111119;border:1px solid #23232c;border-radius:16px;padding:12px}
+    .muted{color:#a8a8b3;font-size:12px}
+    .tag{display:inline-block;font-size:12px;padding:4px 8px;border:1px solid #2a2a33;border-radius:999px;margin-right:6px;margin-top:6px;color:#d8d8e3}
+    a{color:#8ab4ff;text-decoration:none}
+    .err{color:#ff7b7b}
+    .pill{display:inline-flex;gap:8px;align-items:center}
+  </style>
+</head>
+<body>
+<header>
+  <h1>📈 TikTok Trends Radar</h1>
+  <div class="row">
+    <span class="pill">
+      <span class="muted">Country</span>
+      <select id="country">
+        <option value="US" selected>US</option>
+        <option value="GB">GB</option>
+        <option value="JP">JP</option>
+        <option value="KR">KR</option>
+        <option value="ID">ID</option>
+        <option value="VN">VN</option>
+        <option value="TH">TH</option>
+        <option value="TR">TR</option>
+        <option value="BR">BR</option>
+      </select>
+    </span>
+
+    <span class="pill">
+      <span class="muted">Type</span>
+      <select id="type">
+        <option value="hashtags">Trending Hashtags</option>
+        <option value="songs">Trending Sounds</option>
+        <option value="creators">Trending Creators</option>
+        <option value="videos">Trending Videos</option>
+        <option value="ads">Top Ads</option>
+      </select>
+    </span>
+
+    <input id="q" placeholder="Search keyword (title/author/#tag)" />
+    <button id="reload">Refresh</button>
+    <span class="muted" id="status"></span>
+  </div>
+  <div class="row" style="margin-top:8px;">
+    <span class="muted">API Base:</span>
+    <input id="apiBase" style="flex:1;min-width:260px" placeholder="https://YOUR-VERCEL-DOMAIN.vercel.app" />
+    <button id="save">Save</button>
+  </div>
+</header>
+
+<main>
+  <div id="msg" class="muted"></div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<script>
+  // 1) Set your deployed API base here (or paste into the input and Save)
+  let API_BASE = localStorage.getItem("API_BASE") || "https://tiktok-creative-center-api-orcin.vercel.app";
+
+  // 2) IMPORTANT: endpoints differ by project.
+  // Open the author's demo "Try Endpoint", copy the request path, then map it here.
+  // Example mapping (PLACEHOLDER): /api/trending/hashtags?country=US
+  const ENDPOINTS = {
+    hashtags: (c) => `/api/trending/hashtags?country=${encodeURIComponent(c)}`,
+    songs:    (c) => `/api/trending/songs?country=${encodeURIComponent(c)}`,
+    creators: (c) => `/api/trending/creators?country=${encodeURIComponent(c)}`,
+    videos:   (c) => `/api/trending/videos?country=${encodeURIComponent(c)}`,
+    ads:      (c) => `/api/top-ads?country=${encodeURIComponent(c)}`
+  };
+
+  const elCountry = document.getElementById("country");
+  const elType = document.getElementById("type");
+  const elQ = document.getElementById("q");
+  const elGrid = document.getElementById("grid");
+  const elMsg = document.getElementById("msg");
+  const elStatus = document.getElementById("status");
+  const elApiBase = document.getElementById("apiBase");
+
+  elApiBase.value = API_BASE;
+
+  function pickArray(data){
+    if (Array.isArray(data)) return data;
+    for (const k of ["data","items","list","itemList","result"]) {
+      if (Array.isArray(data?.[k])) return data[k];
+    }
+    return [];
+  }
+
+  function textOf(x){
+    return (x ?? "").toString();
+  }
+
+  function render(items){
+    const q = elQ.value.trim().toLowerCase();
+    let filtered = items;
+    if (q) {
+      filtered = items.filter(it => JSON.stringify(it).toLowerCase().includes(q));
+    }
+
+    elGrid.innerHTML = "";
+    if (filtered.length === 0){
+      elMsg.textContent = "No results. Try another country/type/keyword.";
+      return;
+    }
+    elMsg.textContent = "";
+
+    filtered.slice(0, 60).forEach(it => {
+      const title = it.title || it.name || it.hashtag_name || it.music_name || it.author || "Untitled";
+      const author = it.author || it.creator || it.username || it.owner || "";
+      const rank = it.rank ?? it.position ?? "";
+      const link = it.link || it.url || it.music_url || it.hashtag_url || "";
+
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div style="font-size:14px;line-height:1.35;margin-bottom:8px;">
+          ${link ? `<a href="${textOf(link)}" target="_blank" rel="noreferrer">${textOf(title)}</a>` : textOf(title)}
+        </div>
+        <div class="muted">${author ? `By: ${textOf(author)}` : ""}</div>
+        <div style="margin-top:10px;">
+          ${rank !== "" ? `<span class="tag"># ${textOf(rank)}</span>` : ""}
+          ${it.country_code ? `<span class="tag">${textOf(it.country_code)}</span>` : ""}
+          ${it.rank_diff_type != null ? `<span class="tag">Δ type: ${textOf(it.rank_diff_type)}</span>` : ""}
+        </div>
+      `;
+      elGrid.appendChild(card);
+    });
+  }
+
+  async function load(){
+    elStatus.textContent = "Loading…";
+    elMsg.textContent = "";
+    elGrid.innerHTML = "";
+
+    const c = elCountry.value;
+    const t = elType.value;
+
+    if (!API_BASE || !API_BASE.startsWith("https://")) {
+  elStatus.textContent = "";
+  elMsg.innerHTML =
+    `<span class="err">Please set your API Base (Vercel URL) first.</span>`;
+  return;
+    }
+
+    const pathBuilder = ENDPOINTS[t];
+    if (!pathBuilder){
+      elStatus.textContent = "";
+      elMsg.innerHTML = `<span class="err">Unknown type mapping. Please update ENDPOINTS in the code.</span>`;
+      return;
+    }
+
+    const url = API_BASE.replace(/\/$/,"") + pathBuilder(c);
+
+    try{
+      const res = await fetch(url, { cache: "no-store" });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const items = pickArray(data);
+      elStatus.textContent = `Loaded ${items.length} items`;
+      render(items);
+    }catch(e){
+      elStatus.textContent = "";
+      elMsg.innerHTML = `<span class="err">Failed: ${e.message}</span><br/>Tip: check API Base URL, endpoint path, or country availability.`;
+    }
+  }
+
+  document.getElementById("reload").addEventListener("click", load);
+  elCountry.addEventListener("change", load);
+  elType.addEventListener("change", load);
+
+  document.getElementById("save").addEventListener("click", () => {
+    API_BASE = elApiBase.value.trim();
+    localStorage.setItem("API_BASE", API_BASE);
+    load();
+  });
+
+  load();
+</script>
+</body>
+</html>
