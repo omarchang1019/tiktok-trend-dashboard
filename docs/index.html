@@ -344,15 +344,31 @@
     }
 
     function normalizeItems(json){
-      if (!json) return [];
-      if (Array.isArray(json)) return json;
-      if (Array.isArray(json.data)) return json.data;
-      if (json.data && Array.isArray(json.data.list)) return json.data.list;
-      if (json.data && Array.isArray(json.data.items)) return json.data.items;
-      if (Array.isArray(json.list)) return json.list;
-      if (Array.isArray(json.items)) return json.items;
-      return [];
-    }
+  if (!json) return [];
+  if (Array.isArray(json)) return json;
+
+  // your API wrapper: { ok:true, data: ... }
+  const d = (json && json.data !== undefined) ? json.data : json;
+
+  // direct arrays
+  if (Array.isArray(d)) return d;
+
+  // common nested arrays
+  if (d && Array.isArray(d.list)) return d.list;
+  if (d && Array.isArray(d.items)) return d.items;
+
+  // common tiktok creative center shapes (often different per endpoint)
+  if (d && Array.isArray(d.rank_list)) return d.rank_list;
+  if (d && Array.isArray(d.video_list)) return d.video_list;
+  if (d && Array.isArray(d.creator_list)) return d.creator_list;
+  if (d && Array.isArray(d.music_list)) return d.music_list;
+
+  // sometimes deeper
+  if (d && d.data && Array.isArray(d.data)) return d.data;
+  if (d && d.data && Array.isArray(d.data.list)) return d.data.list;
+
+  return [];
+}
 
     function toText(v){
       if (v === null || v === undefined) return "";
