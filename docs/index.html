@@ -768,7 +768,7 @@ function updatePager(){
 
 $("btnPrev")?.addEventListener("click", () => {
   if (CURRENT_PAGE > 1) {
-    CURRENT_PAGE -= 1;
+    CURRENT_PAGE--;
     load();
   }
 });
@@ -790,35 +790,24 @@ $("pageJump")?.addEventListener("keydown", (e) => {
 });
 
 $("btnNext")?.addEventListener("click", () => {
-  if (LAST_HAS_MORE) {
-    CURRENT_PAGE += 1;
-    load();
-  }
+  if (LAST_TOTAL_PAGES && CURRENT_PAGE >= LAST_TOTAL_PAGES) return;
+  CURRENT_PAGE++;
+  load();
 });
     $("btnLoad").addEventListener("click", load);
-    $("type").addEventListener("change", () => {
-  CURRENT_PAGE = 1;
-  load();
-});
+    function resetAndLoad(){
+      CURRENT_PAGE = 1;
+      load();
+    }
+    
+    $("type").addEventListener("change", resetAndLoad);
+    $("country").addEventListener("change", resetAndLoad);
+    $("period").addEventListener("change", resetAndLoad);
+    $("limit").addEventListener("change", resetAndLoad);
+    
+    // 搜索框建议 debounce，但先简单点
+    $("q").addEventListener("input", resetAndLoad);
 
-$("country").addEventListener("change", () => {
-  CURRENT_PAGE = 1;
-  load();
-});
-
-$("period").addEventListener("change", () => {
-  // creators doesn't use period; still ok to reload
-  CURRENT_PAGE = 1;
-  load();
-});
-
-// ✅ limit 已经不用了（固定每页 20 + 分页）
-// $("limit").addEventListener("change", load);
-
-$("q").addEventListener("input", () => {
-  CURRENT_PAGE = 1;
-  load();
-});
 
     // auto-load on open
     load();
