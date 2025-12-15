@@ -299,7 +299,8 @@
         <div class="field">
           <div class="label">Period</div>
           <select id="period">
-            <option value="7">Last 7 days</option>
+            <option value="1">Last 24 hours</option>
+            <option value="7" selected>Last 7 days</option>
             <option value="30">Last 30 days</option>
             <option value="120">Last 120 days</option>
           </select>
@@ -376,6 +377,38 @@
   return [];
 }
 
+    function parseToSec(v){
+  const n = Number(v);
+  if (!Number.isFinite(n)) return null;
+  // heuristic: ms timestamps are huge (>= 1e12)
+  if (n >= 1e12) return Math.floor(n / 1000);
+  // sec timestamps (>= 1e9) typical
+  if (n >= 1e9) return Math.floor(n);
+  // some APIs use smaller seconds but that would be too old; still accept
+  return Math.floor(n);
+}
+
+function getItemTsSec(it){
+  // try common fields (seconds or ms)
+  const candidates = [
+    "publish_time","publishTime",
+    "create_time","createTime",
+    "create_time_ms","createTimeMs",
+    "item_create_time","itemCreateTime",
+    "video_create_time","videoCreateTime",
+    "upload_time","uploadTime",
+    "on_list_time","on_list_times","onListTime",
+  ];
+
+  for (const k of candidates){
+    const v = it?.[k];
+    if (v === undefined || v === null || v === "") continue;
+    const sec = parseToSec(v);
+    if (sec) return sec;
+  }
+
+  return null;
+}
 
     function toText(v){
       if (v === null || v === undefined) return "";
@@ -404,12 +437,14 @@
 
     // ---------- endpoints ----------
     function buildPath(type, country, period, limit){
-      // creators endpoint does not need period in your API
-      if (type === "creators"){
-        return `/api/creators?country=${encodeURIComponent(country)}&limit=${encodeURIComponent(limit)}&page=1`;
-      }
-      return `/api/${type}?country=${encodeURIComponent(country)}&period=${encodeURIComponent(period)}&limit=${encodeURIComponent(limit)}&page=1`;
-    }
+  // ✅ SAFETY: API only supports 7/30/120
+  const apiPeriod = (period === "1") ? "7" : period;
+
+  if (type === "creators"){
+    return `/api/creators?country=${encodeURIComponent(country)}&limit=${encodeURIComponent(limit)}&page=1`;
+  }
+  return `/api/${type}?country=${encodeURIComponent(country)}&period=${encodeURIComponent(apiPeriod)}&limit=${encodeURIComponent(limit)}&page=1`;
+}
 
     // ---------- render ----------
     function renderCards(type, items, q){
@@ -604,10 +639,42 @@ if (link && link.startsWith("/")) {
         }
 
         const items = normalizeItems(json);
-        console.log("Normalized items length:", items.length);
+console.log("Normalized items length:", items.length);
 
-        setStatus(items.length ? "ok" : "warn", items.length ? `Loaded ${items.length} items.` : "No items returned.");
-        renderCards(type, items, q);
+const uiPeriod = $("period").value; // "1" | "7" | "30" | "120"
+
+let finalItems = items;
+let droppedNoTs = 0;
+let droppedOld = 0;
+
+if (uiPeriod === "1") {
+  const nowSec = Math.floor(Date.now() / 1000);
+  const cutoff = nowSec - 24 * 3600;
+
+  finalItems = items.filter(it => {
+    const ts = getItemTsSec(it);
+    if (!ts) { droppedNoTs++; return false; }       // 严格：无时间戳隐藏
+    if (ts < cutoff) { droppedOld++; return false; } // 超过 24h 隐藏
+    return true;
+  });
+}
+
+if (uiPeriod === "1") {
+  setStatus(
+    finalItems.length ? "ok" : "warn",
+    finalItems.length
+      ? `Loaded ${finalItems.length} items (24h strict). Hidden: ${droppedNoTs} no-timestamp, ${droppedOld} older than 24h.`
+      : `No items in last 24h (strict). Hidden: ${droppedNoTs} no-timestamp, ${droppedOld} older than 24h.`
+  );
+} else {
+  setStatus(
+    items.length ? "ok" : "warn",
+    items.length ? `Loaded ${items.length} items.` : "No items returned."
+  );
+}
+
+renderCards(type, finalItems, q);
+
 
       }catch(e){
         setStatus("bad", `Failed: ${String(e?.message || e)}`);
