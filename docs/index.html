@@ -519,7 +519,7 @@ function getItemTsSec(it){
         div.className = "empty";
         div.textContent = "No results. Try another country/type/keyword.";
         root.appendChild(div);
-        return;
+        return 0;
       }
 
       const grid = document.createElement("div");
@@ -659,6 +659,7 @@ if (link && link.startsWith("/")) {
       }
 
       root.appendChild(grid);
+      return filtered.length; 
 
       function tagEl(text){
         const s = document.createElement("span");
@@ -762,7 +763,13 @@ setStatus(
 );
 }
 
-renderCards(type, finalItems, q);
+const shown = renderCards(type, finalItems, q);
+setStatus(
+  shown ? "ok" : "warn",
+  shown
+    ? `Showing ${shown} item${shown > 1 ? "s" : ""}.`
+    : (q ? "No matches for this keyword." : "No items returned.")
+);
 updatePager();
 
       }catch(e){
