@@ -442,25 +442,46 @@ function getItemTsSec(it){
       return x.toLocaleString();
     }
 
-    function containsQuery(item, q){
-  q = (q || "").trim().toLowerCase();
+    function containsQuery(item, q, type){
   if (!q) return true;
+  const qq = q.toLowerCase();
 
-  // only search in a few human-readable fields
-  const parts = [
-    pick(item, ["hashtag_name","challenge_name","name","title","tag"]),
-    pick(item, ["desc","video_title"]),
-    pick(item, ["author","author_name","nickname","nick_name","unique_id"]),
-    pick(item, ["song_title","music_title"]),
-    pick(item, ["country_code","country"]),
-  ];
+  if (type === "hashtags") {
+    return String(item.hashtag_name || "")
+      .toLowerCase()
+      .includes(qq);
+  }
 
-  const hay = parts
-    .filter(v => v !== undefined && v !== null)
-    .map(v => String(v).toLowerCase())
-    .join(" | ");
+  if (type === "songs") {
+    return (
+      String(item.song_title || item.music_title || item.title || "")
+        .toLowerCase()
+        .includes(qq) ||
+      String(item.author || item.artist || "")
+        .toLowerCase()
+        .includes(qq)
+    );
+  }
 
-  return hay.includes(q);
+  if (type === "creators") {
+    return String(item.nick_name || item.nickname || item.unique_id || "")
+      .toLowerCase()
+      .includes(qq);
+  }
+
+  if (type === "videos") {
+    return (
+      String(item.title || item.desc || "")
+        .toLowerCase()
+        .includes(qq) ||
+      String(item.author || item.nickname || "")
+        .toLowerCase()
+        .includes(qq)
+    );
+  }
+
+  // fallback（兜底）
+  return JSON.stringify(item).toLowerCase().includes(qq);
 }
 
     // ---------- endpoints ----------
@@ -482,7 +503,7 @@ function getItemTsSec(it){
       const root = $("content");
       root.innerHTML = "";
 
-      const filtered = (items || []).filter(it => containsQuery(it, q));
+      const filtered = (items || []).filter(it => containsQuery(it, q, type));
 
       console.log(
   "Sample items:",
