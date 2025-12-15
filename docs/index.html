@@ -566,6 +566,16 @@ if (link && link.startsWith("/")) {
   link = "https://www.tiktok.com" + link;
 }
 
+// ✅ Force hashtag link for hashtags (TikTok canonical URL)
+if ((!link || !/^https?:\/\//i.test(link)) && type === "hashtags") {
+  const hn = toText(pick(it, ["hashtag_name", "challenge_name", "name", "title", "tag"]))
+    .trim()
+    .replace(/^#/, "");
+  if (hn) {
+    link = "https://www.tiktok.com/tag/" + encodeURIComponent(hn);
+  }
+}
+
         // numeric meta
         const views = pick(it, ["vv", "view_cnt", "views", "play_cnt", "video_view_cnt"]);
         const likes = pick(it, ["like_cnt", "likes"]);
