@@ -626,6 +626,7 @@ if (link && link.startsWith("/")) {
 
     // ---------- load ----------
     async function load(){
+      console.log("API URL:", url);
       const base = cleanBaseUrl($("apiBase").value);
       const country = $("country").value;
       const type = $("type").value;
