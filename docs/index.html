@@ -319,17 +319,24 @@
 
     <div id="content"></div>
     
-    <!-- ✅ Paste Step 6 pagination panel HERE -->
-<div class="panel" style="margin-top:14px;">
-  <div style="display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
-    <div class="pill">
+    <div class="panel" style="margin-top:14px;">
+  <div style="display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+    <div class="pill" style="display:flex; align-items:center; gap:10px;">
       <span class="dot ok"></span>
-      <span id="pageInfo">Page 1 · 20 items per page</span>
+      <span id="pageInfo">Page 1</span>
+      <span id="pageTotal" style="opacity:.7;"></span>
     </div>
 
-    <div style="display:flex; gap:10px;">
+    <div style="display:flex; gap:10px; align-items:center;">
       <button class="btn" id="btnPrev">Prev</button>
       <button class="btn" id="btnNext">Next</button>
+
+      <div class="pill" style="display:flex; gap:8px; align-items:center;">
+        <span style="opacity:.8;">Go</span>
+        <input id="pageJump" type="number" min="1" placeholder="1"
+               style="width:80px; background:transparent; border:none; outline:none; color:inherit;">
+        <button class="btn" id="btnGo">Go</button>
+      </div>
     </div>
   </div>
 </div>
@@ -644,8 +651,22 @@ if (link && link.startsWith("/")) {
         const resp = await fetch(url, { method: "GET" });
         const json = await resp.json().catch(() => null);
         
-        // has_more lives in different places depending on endpoint
-        LAST_HAS_MORE = !!(json?.data?.pagination?.has_more ?? json?.data?.pagination?.hasMore ?? json?.pagination?.has_more);
+        const pg = json?.data?.pagination || json?.pagination || null;
+        
+        LAST_HAS_MORE = !!(pg?.has_more ?? pg?.hasMore);
+        
+        // total count (optional)
+        LAST_TOTAL_COUNT = pg?.total_count ?? pg?.total ?? pg?.count ?? null;
+        
+        if (LAST_TOTAL_COUNT != null) {
+          const n = Number(LAST_TOTAL_COUNT);
+          LAST_TOTAL_PAGES = Number.isFinite(n)
+            ? Math.max(1, Math.ceil(n / PAGE_SIZE))
+            : null;
+        } else {
+          LAST_TOTAL_PAGES = null;
+        }
+
 
         // debug (open console if needed)
         console.log("API URL:", url);
@@ -714,15 +735,35 @@ let LAST_Q = "";
 function updatePager(){
   const prev = $("btnPrev");
   const next = $("btnNext");
-  if (!prev || !next) return;
+  const info = $("pageInfo");
+  const total = $("pageTotal");
+  const jump = $("pageJump");
 
-  prev.disabled = CURRENT_PAGE <= 1;
-  next.disabled = !LAST_HAS_MORE;
+  if (info) info.textContent = `Page ${CURRENT_PAGE}`;
 
-  prev.style.opacity = prev.disabled ? 0.45 : 1;
-  next.style.opacity = next.disabled ? 0.45 : 1;
+  if (total) {
+    total.textContent = LAST_TOTAL_PAGES ? `/ ${LAST_TOTAL_PAGES}` : "";
+  }
 
-  $("pageInfo").textContent = `Page ${CURRENT_PAGE} · ${PAGE_SIZE} items per page`;
+  if (jump) {
+    jump.value = "";
+    jump.placeholder = String(CURRENT_PAGE);
+    if (LAST_TOTAL_PAGES) jump.max = String(LAST_TOTAL_PAGES);
+  }
+
+  if (prev) {
+    prev.disabled = CURRENT_PAGE <= 1;
+    prev.style.opacity = prev.disabled ? 0.45 : 1;
+  }
+
+  if (next) {
+    const disabled = LAST_TOTAL_PAGES
+      ? (CURRENT_PAGE >= LAST_TOTAL_PAGES)
+      : !LAST_HAS_MORE;
+
+    next.disabled = disabled;
+    next.style.opacity = disabled ? 0.45 : 1;
+  }
 }
 
 $("btnPrev")?.addEventListener("click", () => {
@@ -730,6 +771,22 @@ $("btnPrev")?.addEventListener("click", () => {
     CURRENT_PAGE -= 1;
     load();
   }
+});
+
+    $("btnGo")?.addEventListener("click", () => {
+  const v = Number($("pageJump")?.value);
+  if (!Number.isFinite(v) || v < 1) return;
+
+  if (LAST_TOTAL_PAGES) {
+    CURRENT_PAGE = Math.min(Math.max(1, v), LAST_TOTAL_PAGES);
+  } else {
+    CURRENT_PAGE = Math.max(1, v);
+  }
+  load();
+});
+
+$("pageJump")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") $("btnGo")?.click();
 });
 
 $("btnNext")?.addEventListener("click", () => {
