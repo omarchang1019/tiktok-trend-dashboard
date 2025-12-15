@@ -75,12 +75,11 @@
   // Open the author's demo "Try Endpoint", copy the request path, then map it here.
   // Example mapping (PLACEHOLDER): /api/trending/hashtags?country=US
   const ENDPOINTS = {
-    hashtags: (c) => `/api/trending/hashtags?country=${encodeURIComponent(c)}`,
-    songs:    (c) => `/api/trending/songs?country=${encodeURIComponent(c)}`,
-    creators: (c) => `/api/trending/creators?country=${encodeURIComponent(c)}`,
-    videos:   (c) => `/api/trending/videos?country=${encodeURIComponent(c)}`,
-    ads:      (c) => `/api/top-ads?country=${encodeURIComponent(c)}`
-  };
+  hashtags: (c) => `/api/hashtags?country=${encodeURIComponent(c)}&period=7&limit=20&page=1`,
+  songs:    (c) => `/api/songs?country=${encodeURIComponent(c)}&period=7&limit=20&page=1`,
+  videos:   (c) => `/api/videos?country=${encodeURIComponent(c)}&period=7&limit=20&page=1`,
+  creators: (c) => `/api/creators?country=${encodeURIComponent(c)}&limit=20&page=1`
+};
 
   const elCountry = document.getElementById("country");
   const elType = document.getElementById("type");
