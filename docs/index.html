@@ -660,11 +660,11 @@ if (uiPeriod === "1") {
 }
 
 if (uiPeriod === "1") {
-  setStatus(
+   setStatus(
     finalItems.length ? "ok" : "warn",
     finalItems.length
-      ? `Loaded ${finalItems.length} items (24h strict). Hidden: ${droppedNoTs} no-timestamp, ${droppedOld} older than 24h.`
-      : `No items in last 24h (strict). Hidden: ${droppedNoTs} no-timestamp, ${droppedOld} older than 24h.`
+      ? "Showing trends from the last 24 hours"
+      : "No trends detected in the last 24 hours"
   );
 } else {
   setStatus(
