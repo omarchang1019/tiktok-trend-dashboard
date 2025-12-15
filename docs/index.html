@@ -345,22 +345,30 @@
 
     function normalizeItems(json){
   if (!json) return [];
-
-  // 你的 API 是：{ ok:true, data:{ list:[...] , pagination:{...} } }
-  if (json.data) {
-    if (Array.isArray(json.data)) return json.data;
-    if (json.data && Array.isArray(json.data.list)) return json.data.list;  // ✅ 关键
-    if (json.data && Array.isArray(json.data.items)) return json.data.items;
-    if (json.data && Array.isArray(json.data.rank_list)) return json.data.rank_list;
-  }
-
-  // fallback
   if (Array.isArray(json)) return json;
-  if (Array.isArray(json.list)) return json.list;
-  if (Array.isArray(json.items)) return json.items;
+
+  const d = (json.data !== undefined) ? json.data : json;
+
+  // 1) direct array
+  if (Array.isArray(d)) return d;
+
+  // 2) common key names (based on your real responses)
+  if (d && Array.isArray(d.list)) return d.list;        // hashtags
+  if (d && Array.isArray(d.videos)) return d.videos;    // videos
+  if (d && Array.isArray(d.songs)) return d.songs;      // likely
+  if (d && Array.isArray(d.creators)) return d.creators;// likely
+
+  // 3) other common shapes
+  if (d && Array.isArray(d.items)) return d.items;
+  if (d && Array.isArray(d.rank_list)) return d.rank_list;
+
+  // 4) deeper fallback
+  if (d && d.data && Array.isArray(d.data)) return d.data;
+  if (d && d.data && Array.isArray(d.data.list)) return d.data.list;
 
   return [];
 }
+
 
     function toText(v){
       if (v === null || v === undefined) return "";
